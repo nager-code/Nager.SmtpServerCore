@@ -1,4 +1,4 @@
-# What is Nager.SmtpServerCore?
+﻿# What is Nager.SmtpServerCore?
 
 **Nager.SmtpServerCore** is a lightweight yet powerful SMTP server implementation in C#.  
 Built entirely in .NET, it leverages the Task Parallel Library (TPL) for maximum performance.
@@ -12,7 +12,7 @@ Check the [Changelog](https://github.com/nager/Nager.SmtpServerCore/blob/main/CH
 
 ## ⚡ Supported ESMTP Extensions
 
-SmtpServer currently supports the following extensions:
+Nager.SmtpServerCore currently supports the following extensions:
 
 - STARTTLS
 - SIZE
@@ -33,14 +33,31 @@ PM> install-package Nager.SmtpServerCore
 Starting a basic SMTP server requires only a few lines of code:
 
 ```cs
+using Nager.SmtpServerCore;
+using Nager.SmtpServerCore.ComponentModel;
+
 var options = new SmtpServerOptionsBuilder()
     .ServerName("localhost")
     .Port(25, 587)
     .Build();
 
-var smtpServer = new SmtpServer.SmtpServer(options, ServiceProvider.Default);
+var smtpServer = new SmtpServer(options, ServiceProvider.Default);
 await smtpServer.StartAsync(CancellationToken.None);
 ```
+
+### Server options
+
+| Option | Default | Description |
+|---|---|---|
+| `ServerName(string)` | | The name announced in the greeting and the EHLO reply. |
+| `Port(params int[])` / `Endpoint(...)` | | The endpoints to listen on, see `EndpointDefinitionBuilder` for TLS, authentication and session timeout settings. |
+| `MaxMessageSize(int, MaxMessageSizeHandling)` | unlimited | Announced via the SIZE extension; with `MaxMessageSizeHandling.Strict` the session is closed when more data is received. |
+| `MaxConcurrentSessions(int)` | 100 | Maximum number of sessions handled at the same time, further connections wait for a free slot. |
+| `MaxRcptToCount(int)` | 10 | Maximum number of recipients per message. |
+| `MaxRetryCount(int)` | 5 | Number of rejected commands before the session is closed. |
+| `MaxAuthenticationAttempts(int)` | 3 | Number of failed AUTH attempts before the session is closed. |
+| `CommandWaitTimeout(TimeSpan)` | 5 minutes | How long the server waits for the next command. |
+| `CustomSmtpGreeting(Func<ISessionContext, string>)` | | Replaces the default `220` greeting line. |
 
 ### What hooks are provided?
 
@@ -61,11 +78,10 @@ serviceProvider.Add(new SampleMessageStore());
 serviceProvider.Add(new SampleMailboxFilter());
 serviceProvider.Add(new SampleUserAuthenticator());
 
-var smtpServer = new SmtpServer.SmtpServer(options, serviceProvider);
+var smtpServer = new SmtpServer(options, serviceProvider);
 await smtpServer.StartAsync(CancellationToken.None);
 
-// to create an X509Certificate for testing you need to run MAKECERT.EXE and then PVK2PFX.EXE
-// http://www.digitallycreated.net/Blog/38/using-makecert-to-create-certificates-for-development
+// load the server certificate (PFX) that is used for implicit TLS and STARTTLS
 static X509Certificate2 CreateCertificate()
 {
     var certificate = File.ReadAllBytes(@"Certificate.pfx");
@@ -100,19 +116,21 @@ public class SampleMessageStore : MessageStore
 ```cs
 public class SampleMailboxFilter : IMailboxFilter, IMailboxFilterFactory
 {
-    public Task<MailboxFilterResult> CanAcceptFromAsync(ISessionContext context, IMailbox @from, int size, CancellationToken cancellationToken)
+    public Task<bool> CanAcceptFromAsync(ISessionContext context, IMailbox @from, int size, CancellationToken cancellationToken)
     {
-        if (String.Equals(@from.Host, "test.com"))
+        if (string.Equals(@from.Host, "test.com", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult(MailboxFilterResult.Yes);
+            return Task.FromResult(true);
         }
 
-        return Task.FromResult(MailboxFilterResult.NoPermanently);
+        // returning false replies with "550 mailbox unavailable",
+        // throw a SmtpResponseException to reply with a specific code and text
+        throw new SmtpResponseException(new SmtpResponse(SmtpReplyCode.RelayDenied, "relaying denied"));
     }
 
-    public Task<MailboxFilterResult> CanDeliverToAsync(ISessionContext context, IMailbox to, IMailbox @from, CancellationToken token)
+    public Task<bool> CanDeliverToAsync(ISessionContext context, IMailbox to, IMailbox @from, CancellationToken cancellationToken)
     {
-        return Task.FromResult(MailboxFilterResult.Yes);
+        return Task.FromResult(true);
     }
 
     public IMailboxFilter CreateInstance(ISessionContext context)

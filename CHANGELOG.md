@@ -1,4 +1,11 @@
-# Change Log
+﻿# Change Log
+
+## Unreleased
+
+- Added: Configuration option `MaxConcurrentSessions` to limit the number of sessions that are handled at the same time (default 100), further connections wait for a free slot.
+- Added: Configuration option `MaxRcptToCount` to limit the number of recipients per message (default 10).
+- Changed: Project renamed to Nager.SmtpServerCore, all types now live in the `Nager.SmtpServerCore` namespace (and sub namespaces such as `Nager.SmtpServerCore.Protocol`).
+- Improved: The input pipe uses a 16 KB read buffer.
 
 ## v11.1.0
 
@@ -27,7 +34,7 @@ var options = new SmtpServerOptionsBuilder()
 
 ## v10.0.0
 
-- Removed MailboxFilterResult in favor of bool result. Impementations can throw SmtpResponseException for more control.
+- Removed MailboxFilterResult in favor of bool result. Implementations can throw SmtpResponseException for more control.
 - Handled servers that send the QUIT command and immediately close the connection.
 - Added an ICertificateFactory on the Endpoint that allows a new certificate to be created when required without having to restart the server.
 
