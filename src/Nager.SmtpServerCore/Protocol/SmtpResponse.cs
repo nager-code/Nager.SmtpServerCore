@@ -81,6 +81,11 @@
         public static readonly SmtpResponse MaxMessageSizeExceeded = new SmtpResponse(SmtpReplyCode.SizeLimitExceeded, "message size exceeds fixed maximium message size");
 
         /// <summary>
+        /// 500 LineTooLong
+        /// </summary>
+        public static readonly SmtpResponse LineTooLong = new SmtpResponse(SmtpReplyCode.CommandUnrecognized, "line too long");
+
+        /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="replyCode">The reply code.</param>

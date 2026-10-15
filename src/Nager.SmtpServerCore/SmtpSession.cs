@@ -133,6 +133,7 @@ namespace Nager.SmtpServerCore
                         return Task.CompletedTask;
                     },
                     context.ServerOptions.MaxMessageSizeOptions,
+                    context.ServerOptions.MaxLineLength,
                     cancellationTokenSource.Token).ConfigureAwait(false);
 
                 return command;

@@ -8,6 +8,11 @@ namespace Nager.SmtpServerCore
     /// </summary>
     public sealed class SmtpServerOptionsBuilder
     {
+        /// <summary>
+        /// The default maximum line length in bytes.
+        /// </summary>
+        public const int DefaultMaxLineLength = 8192;
+
         readonly List<Action<SmtpServerOptions>> _setters = new List<Action<SmtpServerOptions>>();
 
         /// <summary>
@@ -25,6 +30,7 @@ namespace Nager.SmtpServerCore
                 MaxRcptToCount = 10,
                 MaxAuthenticationAttempts = 3,
                 CommandWaitTimeout = TimeSpan.FromMinutes(5),
+                MaxLineLength = DefaultMaxLineLength,
                 CustomSmtpGreeting = null,
             };
 
@@ -172,6 +178,24 @@ namespace Nager.SmtpServerCore
         }
 
         /// <summary>
+        /// Sets the maximum number of bytes a single command or authentication line may contain (excluding the terminating CRLF).
+        /// </summary>
+        /// <param name="value">The maximum line length in bytes, must be greater than zero.</param>
+        /// <returns>An OptionsBuilder to continue building on.</returns>
+        /// <remarks>RFC 5321 requires servers to accept command lines of at least 512 bytes, the default is <see cref="DefaultMaxLineLength"/>.</remarks>
+        public SmtpServerOptionsBuilder MaxLineLength(int value)
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "The maximum line length must be greater than zero.");
+            }
+
+            _setters.Add(options => options.MaxLineLength = value);
+
+            return this;
+        }
+
+        /// <summary>
         /// Sets the custom SMTP greeting message sent to the client upon connection,
         /// typically returned as the initial "220" response.
         /// </summary>
@@ -218,6 +242,9 @@ namespace Nager.SmtpServerCore
 
             /// <inheritdoc/>
             public TimeSpan CommandWaitTimeout { get; set; }
+
+            /// <inheritdoc/>
+            public int MaxLineLength { get; set; }
 
             /// <inheritdoc/>
             public Func<ISessionContext, string> CustomSmtpGreeting { get; set; }
