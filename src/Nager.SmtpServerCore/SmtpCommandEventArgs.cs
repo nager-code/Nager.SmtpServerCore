@@ -1,4 +1,4 @@
-using Nager.SmtpServerCore.Protocol;
+﻿using Nager.SmtpServerCore.Protocol;
 
 namespace Nager.SmtpServerCore
 {

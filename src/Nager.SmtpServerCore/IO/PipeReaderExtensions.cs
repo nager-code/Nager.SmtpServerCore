@@ -31,7 +31,7 @@ namespace Nager.SmtpServerCore.IO
             {
                 throw new ArgumentNullException(nameof(reader));
             }
-            
+
             var read = await reader.ReadAsync(cancellationToken);
             var head = read.Buffer.Start;
 
@@ -57,7 +57,7 @@ namespace Nager.SmtpServerCore.IO
                 }
 
                 reader.AdvanceTo(read.Buffer.Start, read.Buffer.End);
-                
+
                 read = await reader.ReadAsync(cancellationToken);
             }
         }
@@ -158,9 +158,9 @@ namespace Nager.SmtpServerCore.IO
             {
                 var head = buffer.GetPosition(0);
                 var start = head;
-                
+
                 var segments = new ByteArraySegmentList();
-                
+
                 while (buffer.TryFind(DotBlockStuffing, ref head, out var tail))
                 {
                     var slice = buffer.Slice(start, buffer.GetPosition(3, head));
@@ -173,7 +173,7 @@ namespace Nager.SmtpServerCore.IO
 
                 var remaining = buffer.Slice(start);
                 segments.Append(ref remaining);
-                
+
                 return segments.Build();
             }
         }

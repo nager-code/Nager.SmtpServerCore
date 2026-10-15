@@ -55,7 +55,7 @@ namespace Nager.SmtpServerCore.Protocol
                     },
                     context.ServerOptions.MaxMessageSizeOptions,
                     cancellationToken).ConfigureAwait(false);
-                    
+
                 await context.Pipe.Output.WriteReplyAsync(response, cancellationToken).ConfigureAwait(false);
             }
             catch (SmtpResponseException)

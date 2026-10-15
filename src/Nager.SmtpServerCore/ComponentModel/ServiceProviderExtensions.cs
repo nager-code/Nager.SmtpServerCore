@@ -14,7 +14,7 @@ namespace Nager.SmtpServerCore.ComponentModel
             return serviceProvider.GetService(typeof(TService)) as TService ?? @default;
         }
 
-        internal static TService GetService<TServiceFactory, TService>(this IServiceProvider serviceProvider, ISessionContext sessionContext, TService @default) 
+        internal static TService GetService<TServiceFactory, TService>(this IServiceProvider serviceProvider, ISessionContext sessionContext, TService @default)
             where TService : class
             where TServiceFactory : ISessionContextInstanceFactory<TService>
         {

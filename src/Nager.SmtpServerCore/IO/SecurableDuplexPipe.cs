@@ -49,7 +49,7 @@ namespace Nager.SmtpServerCore.IO
                         ClientCertificateRequired = false,
                         EnabledSslProtocols = protocols,
                         CertificateRevocationCheckMode = X509RevocationMode.Online
-                    }, 
+                    },
                     cancellationToken);
             }
             catch

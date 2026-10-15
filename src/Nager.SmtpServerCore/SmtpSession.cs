@@ -198,7 +198,7 @@ namespace Nager.SmtpServerCore
             {
                 _context.Pipe.Output.WriteLine(_context.ServerOptions.CustomSmtpGreeting(_context));
             }
-            
+
             return _context.Pipe.Output.FlushAsync(cancellationToken);
         }
     }
