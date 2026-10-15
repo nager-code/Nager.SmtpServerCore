@@ -1,4 +1,5 @@
 ﻿using Nager.SmtpServerCore.Authentication;
+using Nager.SmtpServerCore.ComponentModel;
 using Nager.SmtpServerCore.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,7 +88,7 @@ namespace Nager.SmtpServerCore.Protocol
 
             static bool IsPlainLoginAllowed(ISessionContext context)
             {
-                if (context.ServiceProvider.GetService(typeof(IUserAuthenticatorFactory)) == null && context.ServiceProvider.GetService(typeof(IUserAuthenticator)) == null)
+                if (context.ServiceProvider.HasService<IUserAuthenticatorFactory, IUserAuthenticator>() == false)
                 {
                     return false;
                 }
