@@ -63,7 +63,7 @@
         /// <summary>
         /// 554 TransactionFailed
         /// </summary>
-        public static readonly SmtpResponse TransactionFailed = new SmtpResponse(SmtpReplyCode.TransactionFailed);
+        public static readonly SmtpResponse TransactionFailed = new SmtpResponse(SmtpReplyCode.TransactionFailed, "transaction failed");
 
         /// <summary>
         /// 503 BadSequence
@@ -78,7 +78,7 @@
         /// <summary>
         /// 552 MaxMessageSizeExceeded
         /// </summary>
-        public static readonly SmtpResponse MaxMessageSizeExceeded = new SmtpResponse(SmtpReplyCode.SizeLimitExceeded, "message size exceeds fixed maximium message size");
+        public static readonly SmtpResponse MaxMessageSizeExceeded = new SmtpResponse(SmtpReplyCode.SizeLimitExceeded, "message size exceeds fixed maximum message size");
 
         /// <summary>
         /// Constructor.

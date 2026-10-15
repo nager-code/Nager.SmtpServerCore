@@ -64,7 +64,15 @@ namespace Nager.SmtpServerCore.IO
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            writer.WriteLine($"{(int)response.ReplyCode} {response.Message}");
+            // RFC 5321 4.2: the reply text is optional, a reply without text is just the code
+            if (string.IsNullOrEmpty(response.Message))
+            {
+                writer.WriteLine(((int)response.ReplyCode).ToString());
+            }
+            else
+            {
+                writer.WriteLine($"{(int)response.ReplyCode} {response.Message}");
+            }
 
             return writer.FlushAsync(cancellationToken);
         }
