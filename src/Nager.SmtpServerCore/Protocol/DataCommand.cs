@@ -60,7 +60,9 @@ namespace Nager.SmtpServerCore.Protocol
             }
             catch (SmtpResponseException)
             {
-                return false;
+                // the session writes the reply of the exception to the client (and closes the session when the exception requests it),
+                // swallowing it here would leave the client without any reply to the message content
+                throw;
             }
             catch (Exception)
             {
