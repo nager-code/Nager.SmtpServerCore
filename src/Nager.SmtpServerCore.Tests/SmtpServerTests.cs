@@ -144,23 +144,28 @@ namespace Nager.SmtpServerCore.Tests
             }
         }
 
-        [Fact(Skip = "Command timeout wont work properly until https://github.com/dotnet/corefx/issues/15033")]
-        public void WillTimeoutWaitingForCommand()
+        [Fact]
+        public async Task WillTimeoutWaitingForCommand()
         {
             using (CreateServer(c => c.CommandWaitTimeout(TimeSpan.FromSeconds(1))))
             {
-                var client = MailClient.Client();
+                using var client = MailClient.Client();
                 client.NoOp(TestContext.Current.CancellationToken);
 
+                // commands that arrive within the timeout keep the session alive
                 for (var i = 0; i < 5; i++)
                 {
-                    Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken).Wait(TestContext.Current.CancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
                     client.NoOp(TestContext.Current.CancellationToken);
                 }
 
-                Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken).Wait(TestContext.Current.CancellationToken);
+                // no command for longer than the timeout, the server closes the session
+                await Task.Delay(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
 
-                Assert.Throws<IOException>(() => client.NoOp(TestContext.Current.CancellationToken));
+                // the server answers the next command with "221 Timeout while waiting for input." and closes the connection
+                var exception = Assert.Throws<SmtpCommandException>(() => client.NoOp(TestContext.Current.CancellationToken));
+
+                Assert.Equal(SmtpStatusCode.ServiceClosingTransmissionChannel, exception.StatusCode);
             }
         }
 
@@ -333,8 +338,6 @@ namespace Nager.SmtpServerCore.Tests
 
                 Assert.False(sessionContext.Pipe.IsSecure);
             }
-
-            ServicePointManager.ServerCertificateValidationCallback = null;
         }
 
         [Fact]
@@ -532,7 +535,7 @@ namespace Nager.SmtpServerCore.Tests
 
             X509Certificate2 certificate = certificateRequest.CreateSelfSigned(notBefore, notAfter);
 
-            return new X509Certificate2(certificate.Export(X509ContentType.Pfx));
+            return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pfx), null);
         }
 
         public static X509Certificate2 CreateCertificate()
