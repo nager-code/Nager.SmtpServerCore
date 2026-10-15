@@ -391,6 +391,29 @@ namespace Nager.SmtpServerCore.Tests
         }
 
         [Fact]
+        public async Task NegotiatesTls13ByDefault()
+        {
+            // arrange: an implicit TLS endpoint without an explicit SupportedSslProtocols configuration
+            using var disposable = CreateServer(endpoint => endpoint
+                .IsSecure(true)
+                .Certificate(CreateCertificate()));
+
+            using var tcpClient = new TcpClient("localhost", 9025);
+            using var sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+
+            // act: the client lets the operating system choose the best protocol
+            await sslStream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
+            {
+                TargetHost = "localhost",
+                EnabledSslProtocols = SslProtocols.None,
+            }, TestContext.Current.CancellationToken);
+
+            // assert
+            Assert.True(sslStream.IsAuthenticated);
+            Assert.Equal(SslProtocols.Tls13, sslStream.SslProtocol);
+        }
+
+        [Fact]
         public async Task SessionTimeoutIsExceeded_DelayedAuthenticate()
         {
             var sessionTimeout = TimeSpan.FromSeconds(3);
