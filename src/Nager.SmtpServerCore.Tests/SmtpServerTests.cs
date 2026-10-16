@@ -246,7 +246,7 @@ namespace Nager.SmtpServerCore.Tests
             }
 
             Assert.True(isSessionCancelled, "Smtp session is not cancelled");
-            Assert.Equal("554 \r\n221 The session has be cancelled.\r\n", smtpResponse);
+            Assert.Equal("554 \r\n221 The session has been cancelled.\r\n", smtpResponse);
 
             Assert.True(stopwatch.Elapsed > sessionTimeout, "SessionTimeout not reached");
         }

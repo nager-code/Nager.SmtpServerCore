@@ -32,7 +32,7 @@ namespace Nager.SmtpServerCore.Protocol
         /// </summary>
         /// <param name="context">The execution context to operate on.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Returns true if the command executed successfully such that the transition to the next state should occurr, false 
+        /// <returns>Returns true if the command executed successfully such that the transition to the next state should occur, false 
         /// if the current state is to be maintained.</returns>
         internal override async Task<bool> ExecuteAsync(SmtpSessionContext context, CancellationToken cancellationToken)
         {
@@ -40,7 +40,7 @@ namespace Nager.SmtpServerCore.Protocol
 
             using var container = new DisposableContainer<IMailboxFilter>(mailboxFilter);
 
-            if (context.Transaction.To.Count > context.ServerOptions.MaxRcptToCount)
+            if (context.Transaction.To.Count >= context.ServerOptions.MaxRcptToCount)
             {
                 await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.InsufficientStorage, "Too many recipients"), cancellationToken).ConfigureAwait(false);
                 return false;
