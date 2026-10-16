@@ -27,7 +27,7 @@ var options = new SmtpServerOptionsBuilder()
 
 ## v10.0.0
 
-- Removed MailboxFilterResult in favor of bool result. Impementations can throw SmtpResponseException for more control.
+- Removed MailboxFilterResult in favor of bool result. Implementations can throw SmtpResponseException for more control.
 - Handled servers that send the QUIT command and immediately close the connection.
 - Added an ICertificateFactory on the Endpoint that allows a new certificate to be created when required without having to restart the server.
 
