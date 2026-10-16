@@ -12,7 +12,7 @@ Check the [Changelog](https://github.com/nager/Nager.SmtpServerCore/blob/main/CH
 
 ## ⚡ Supported ESMTP Extensions
 
-SmtpServer currently supports the following extensions:
+Nager.SmtpServerCore currently supports the following extensions:
 
 - STARTTLS
 - SIZE
@@ -38,7 +38,7 @@ var options = new SmtpServerOptionsBuilder()
     .Port(25, 587)
     .Build();
 
-var smtpServer = new SmtpServer.SmtpServer(options, ServiceProvider.Default);
+var smtpServer = new SmtpServer(options, ServiceProvider.Default);
 await smtpServer.StartAsync(CancellationToken.None);
 ```
 
@@ -61,7 +61,7 @@ serviceProvider.Add(new SampleMessageStore());
 serviceProvider.Add(new SampleMailboxFilter());
 serviceProvider.Add(new SampleUserAuthenticator());
 
-var smtpServer = new SmtpServer.SmtpServer(options, serviceProvider);
+var smtpServer = new SmtpServer(options, serviceProvider);
 await smtpServer.StartAsync(CancellationToken.None);
 
 // to create an X509Certificate for testing you need to run MAKECERT.EXE and then PVK2PFX.EXE
@@ -102,7 +102,7 @@ public class SampleMailboxFilter : IMailboxFilter, IMailboxFilterFactory
 {
     public Task<MailboxFilterResult> CanAcceptFromAsync(ISessionContext context, IMailbox @from, int size, CancellationToken cancellationToken)
     {
-        if (String.Equals(@from.Host, "test.com"))
+        if (string.Equals(@from.Host, "test.com"))
         {
             return Task.FromResult(MailboxFilterResult.Yes);
         }
@@ -110,7 +110,7 @@ public class SampleMailboxFilter : IMailboxFilter, IMailboxFilterFactory
         return Task.FromResult(MailboxFilterResult.NoPermanently);
     }
 
-    public Task<MailboxFilterResult> CanDeliverToAsync(ISessionContext context, IMailbox to, IMailbox @from, CancellationToken token)
+    public Task<MailboxFilterResult> CanDeliverToAsync(ISessionContext context, IMailbox to, IMailbox @from, CancellationToken cancellationToken)
     {
         return Task.FromResult(MailboxFilterResult.Yes);
     }
@@ -125,7 +125,7 @@ public class SampleMailboxFilter : IMailboxFilter, IMailboxFilterFactory
 ```cs
 public class SampleUserAuthenticator : IUserAuthenticator, IUserAuthenticatorFactory
 {
-    public Task<bool> AuthenticateAsync(ISessionContext context, string user, string password, CancellationToken token)
+    public Task<bool> AuthenticateAsync(ISessionContext context, string user, string password, CancellationToken cancellationToken)
     {
         Console.WriteLine("User={0} Password={1}", user, password);
 
