@@ -143,7 +143,7 @@ public class SampleMailboxFilter : IMailboxFilter, IMailboxFilterFactory
 ```cs
 public class SampleUserAuthenticator : IUserAuthenticator, IUserAuthenticatorFactory
 {
-    public Task<bool> AuthenticateAsync(ISessionContext context, string user, string password, CancellationToken token)
+    public Task<bool> AuthenticateAsync(ISessionContext context, string user, string password, CancellationToken cancellationToken)
     {
         Console.WriteLine("User={0} Password={1}", user, password);
 
