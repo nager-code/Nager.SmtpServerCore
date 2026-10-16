@@ -100,7 +100,7 @@ namespace Nager.SmtpServerCore
                 }
                 catch (OperationCanceledException)
                 {
-                    await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.ServiceClosingTransmissionChannel, "The session has be cancelled."), CancellationToken.None).ConfigureAwait(false);
+                    await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.ServiceClosingTransmissionChannel, "The session has been cancelled."), CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }
@@ -145,7 +145,7 @@ namespace Nager.SmtpServerCore
                     throw new SmtpResponseException(new SmtpResponse(SmtpReplyCode.ServiceClosingTransmissionChannel, "Timeout while waiting for input."), true);
                 }
 
-                throw new SmtpResponseException(new SmtpResponse(SmtpReplyCode.ServiceClosingTransmissionChannel, "The session has be cancelled."), true);
+                throw new SmtpResponseException(new SmtpResponse(SmtpReplyCode.ServiceClosingTransmissionChannel, "The session has been cancelled."), true);
             }
             finally
             {

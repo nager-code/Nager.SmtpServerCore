@@ -10,7 +10,7 @@ namespace Nager.SmtpServerCore.IO
     public static class BuffersExtension
     {
         /// <summary>
-        /// Try to find the first occurrance of a sequence in the given buffer.
+        /// Try to find the first occurrence of a sequence in the given buffer.
         /// </summary>
         /// <param name="source">The source to find the sequence in.</param>
         /// <param name="sequence">The sequence to find in the source.</param>

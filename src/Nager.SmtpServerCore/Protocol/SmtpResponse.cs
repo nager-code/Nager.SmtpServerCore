@@ -78,7 +78,7 @@
         /// <summary>
         /// 552 MaxMessageSizeExceeded
         /// </summary>
-        public static readonly SmtpResponse MaxMessageSizeExceeded = new SmtpResponse(SmtpReplyCode.SizeLimitExceeded, "message size exceeds fixed maximium message size");
+        public static readonly SmtpResponse MaxMessageSizeExceeded = new SmtpResponse(SmtpReplyCode.SizeLimitExceeded, "message size exceeds fixed maximum message size");
 
         /// <summary>
         /// 500 LineTooLong
