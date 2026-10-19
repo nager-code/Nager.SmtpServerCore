@@ -64,7 +64,7 @@ namespace Nager.SmtpServerCore.Protocol
             }
             catch (Exception)
             {
-                await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.TransactionFailed), cancellationToken).ConfigureAwait(false);
+                await context.Pipe.Output.WriteReplyAsync(SmtpResponse.TransactionFailed, cancellationToken).ConfigureAwait(false);
                 return false;
             }
 

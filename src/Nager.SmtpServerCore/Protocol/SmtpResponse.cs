@@ -63,7 +63,7 @@
         /// <summary>
         /// 554 TransactionFailed
         /// </summary>
-        public static readonly SmtpResponse TransactionFailed = new SmtpResponse(SmtpReplyCode.TransactionFailed);
+        public static readonly SmtpResponse TransactionFailed = new SmtpResponse(SmtpReplyCode.TransactionFailed, "transaction failed");
 
         /// <summary>
         /// 503 BadSequence
