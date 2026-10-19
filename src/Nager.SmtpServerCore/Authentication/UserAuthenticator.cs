@@ -22,9 +22,9 @@ namespace Nager.SmtpServerCore.Authentication
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>true if the user is authenticated, false if not.</returns>
         public abstract Task<bool> AuthenticateAsync(
-            ISessionContext context, 
-            string user, 
-            string password, 
+            ISessionContext context,
+            string user,
+            string password,
             CancellationToken cancellationToken);
 
         sealed class DefaultUserAuthenticator : UserAuthenticator

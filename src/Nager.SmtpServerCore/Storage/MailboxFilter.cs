@@ -16,8 +16,8 @@ namespace Nager.SmtpServerCore.Storage
 
         /// <inheritdoc />
         public virtual Task<bool> CanAcceptFromAsync(
-            ISessionContext context, 
-            IMailbox @from, 
+            ISessionContext context,
+            IMailbox @from,
             int size,
             CancellationToken cancellationToken)
         {
@@ -26,8 +26,8 @@ namespace Nager.SmtpServerCore.Storage
 
         /// <inheritdoc />
         public virtual Task<bool> CanDeliverToAsync(
-            ISessionContext context, 
-            IMailbox to, 
+            ISessionContext context,
+            IMailbox to,
             IMailbox @from,
             CancellationToken cancellationToken)
         {

@@ -1,4 +1,4 @@
-using Nager.SmtpServerCore.IO;
+﻿using Nager.SmtpServerCore.IO;
 using Nager.SmtpServerCore.Protocol;
 using System;
 using System.Collections.Generic;

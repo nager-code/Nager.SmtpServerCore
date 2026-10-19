@@ -543,7 +543,7 @@ namespace Nager.SmtpServerCore.Protocol
         {
             if (reader.TryMake(TryMakeText, out var text))
             {
-                Span<char> command = ['S', 'T', 'A', 'R', 'T', 'T', 'L', 'S' ];
+                Span<char> command = ['S', 'T', 'A', 'R', 'T', 'T', 'L', 'S'];
                 return text.CaseInsensitiveStringEquals(ref command);
             }
 
@@ -845,7 +845,7 @@ namespace Nager.SmtpServerCore.Protocol
                 }
 
                 var unescapedLocalpart = Regex.Unescape(tempLocalpart);
-                
+
                 return new Mailbox(unescapedLocalpart, tempDomain);
             }
         }
@@ -1674,7 +1674,7 @@ namespace Nager.SmtpServerCore.Protocol
             {
                 reader.Take();
             }
-            
+
             return true;
         }
 
@@ -1705,7 +1705,7 @@ namespace Nager.SmtpServerCore.Protocol
         public bool TryMakeBase64Chars(ref TokenReader reader)
         {
             var token = reader.Take();
-            
+
             switch (token.Kind)
             {
                 case TokenKind.Text:

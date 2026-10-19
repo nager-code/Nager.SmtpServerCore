@@ -27,7 +27,7 @@ namespace Nager.SmtpServerCore.Storage
         /// Constructor.
         /// </summary>
         /// <param name="canAcceptDelegate">The delegate to accept a mailbox.</param>
-        public DelegatingMailboxFilter(Func<ISessionContext, IMailbox, bool> canAcceptDelegate) 
+        public DelegatingMailboxFilter(Func<ISessionContext, IMailbox, bool> canAcceptDelegate)
             : this(canAcceptDelegate, EmptyDeliverDelegate) { }
 
         /// <summary>

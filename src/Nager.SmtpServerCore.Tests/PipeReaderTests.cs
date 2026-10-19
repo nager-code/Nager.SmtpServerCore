@@ -81,7 +81,7 @@ namespace Nager.SmtpServerCore.Tests
 
             // act
             var text = "";
-            await reader.ReadDotBlockAsync(buffer => 
+            await reader.ReadDotBlockAsync(buffer =>
             {
                 text = StringUtil.Create(buffer);
 

@@ -167,7 +167,7 @@ namespace Nager.SmtpServerCore
         public SmtpServerOptionsBuilder CommandWaitTimeout(TimeSpan value)
         {
             _setters.Add(options => options.CommandWaitTimeout = value);
-            
+
             return this;
         }
 

@@ -70,7 +70,7 @@ namespace Nager.SmtpServerCore
             finally
             {
                 await handle.SessionContext.Pipe.Input.CompleteAsync();
-                
+
                 handle.SessionContext.Pipe.Dispose();
 
                 _sessionLimitSemaphore.Release();
@@ -114,7 +114,7 @@ namespace Nager.SmtpServerCore
             }
 
             public SmtpSession Session { get; }
-            
+
             public SmtpSessionContext SessionContext { get; }
 
             public Task CompletionTask { get; set; }
