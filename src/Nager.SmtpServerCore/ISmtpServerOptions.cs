@@ -49,6 +49,13 @@ namespace Nager.SmtpServerCore
         TimeSpan CommandWaitTimeout { get; }
 
         /// <summary>
+        /// Gets the maximum number of bytes a single command or authentication line may contain (excluding the terminating CRLF).
+        /// A session that sends a longer line is closed with a "500 line too long" reply.
+        /// This limit does not apply to the message content sent after the DATA command, use <see cref="MaxMessageSizeOptions"/> for that.
+        /// </summary>
+        int MaxLineLength { get; }
+
+        /// <summary>
         /// Gets the custom SMTP greeting message that the server sends immediately after a client connects,
         /// typically as the initial "220" response. The message can be dynamically generated based on the session context.
         /// If not set, a default greeting will be used (e.g., "220 mail.example.com ESMTP ready").

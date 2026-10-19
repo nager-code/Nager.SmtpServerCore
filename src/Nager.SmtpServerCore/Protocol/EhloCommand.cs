@@ -96,7 +96,7 @@ namespace Nager.SmtpServerCore.Protocol
                 return context.Pipe.IsSecure || context.EndpointDefinition.AllowUnsecureAuthentication;
             }
         }
-        
+
         /// <summary>
         /// Gets the domain name or address literal.
         /// </summary>

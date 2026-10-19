@@ -65,7 +65,7 @@ namespace Nager.SmtpServerCore.Text
             _peek = default;
             _hasPeeked = false;
         }
-        
+
         /// <summary>
         /// Create a checkpoint of the current state.
         /// </summary>

@@ -85,7 +85,7 @@ namespace Nager.SmtpServerCore.Tests
         {
             using var client = Client(options: options);
 
-            client.NoOp();            
+            client.NoOp();
         }
     }
 
@@ -93,7 +93,7 @@ namespace Nager.SmtpServerCore.Tests
     {
         public SmtpResponse SendUnknownCommand(string command, CancellationToken cancellationToken = default)
         {
-            return SendCommand(command, cancellationToken); 
+            return SendCommand(command, cancellationToken);
         }
     }
 }

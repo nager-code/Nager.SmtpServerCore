@@ -620,7 +620,7 @@ namespace Nager.SmtpServerCore.Tests
             Assert.True(result);
             Assert.Equal(input, StringUtil.Create(address));
         }
-        
+
         [Theory]
         [InlineData("ABCD:EF01:2345:6789:ABCD:EF01:2345")]
         [InlineData("ABCD:EF01:ZZZZ:6789:ABCD:EF01:2345:6789")]

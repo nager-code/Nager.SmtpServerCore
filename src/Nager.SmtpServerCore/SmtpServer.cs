@@ -152,14 +152,14 @@ namespace Nager.SmtpServerCore
         {
             // The listener can be stopped either by the caller cancelling the CancellationToken used when starting the server, or when calling
             // the shutdown method. The Shutdown method will stop the listeners and allow any active sessions to finish gracefully.
-            var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
+            using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_shutdownTokenSource.Token, cancellationToken);
 
             using var endpointListener = _endpointListenerFactory.CreateListener(endpointDefinition);
 
             while (cancellationTokenSource.Token.IsCancellationRequested == false)
             {
                 var sessionContext = new SmtpSessionContext(_serviceProvider, _options, endpointDefinition);
-                
+
                 try
                 {
                     // wait for a client connection

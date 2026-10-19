@@ -133,6 +133,7 @@ namespace Nager.SmtpServerCore
                         return Task.CompletedTask;
                     },
                     context.ServerOptions.MaxMessageSizeOptions,
+                    context.ServerOptions.MaxLineLength,
                     cancellationTokenSource.Token).ConfigureAwait(false);
 
                 return command;
@@ -198,7 +199,7 @@ namespace Nager.SmtpServerCore
             {
                 _context.Pipe.Output.WriteLine(_context.ServerOptions.CustomSmtpGreeting(_context));
             }
-            
+
             return _context.Pipe.Output.FlushAsync(cancellationToken);
         }
     }

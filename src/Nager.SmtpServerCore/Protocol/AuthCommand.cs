@@ -112,7 +112,7 @@ namespace Nager.SmtpServerCore.Protocol
             {
                 await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.ContinueWithAuth, " "), cancellationToken).ConfigureAwait(false);
 
-                authentication = await context.Pipe.Input.ReadLineAsync(Encoding.ASCII, context.ServerOptions.MaxMessageSizeOptions, cancellationToken).ConfigureAwait(false);
+                authentication = await context.Pipe.Input.ReadLineAsync(Encoding.ASCII, context.ServerOptions.MaxMessageSizeOptions, context.ServerOptions.MaxLineLength, cancellationToken).ConfigureAwait(false);
             }
 
             if (TryExtractFromBase64(authentication) == false)
@@ -161,13 +161,13 @@ namespace Nager.SmtpServerCore.Protocol
                 //Username = VXNlcm5hbWU6 (base64)
                 await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.ContinueWithAuth, "VXNlcm5hbWU6"), cancellationToken).ConfigureAwait(false);
 
-                _user = await ReadBase64EncodedLineAsync(context.Pipe.Input, context.ServerOptions.MaxMessageSizeOptions, cancellationToken).ConfigureAwait(false);
+                _user = await ReadBase64EncodedLineAsync(context.Pipe.Input, context.ServerOptions, cancellationToken).ConfigureAwait(false);
             }
 
             //Password = UGFzc3dvcmQ6 (base64)
             await context.Pipe.Output.WriteReplyAsync(new SmtpResponse(SmtpReplyCode.ContinueWithAuth, "UGFzc3dvcmQ6"), cancellationToken).ConfigureAwait(false);
 
-            _password = await ReadBase64EncodedLineAsync(context.Pipe.Input, context.ServerOptions.MaxMessageSizeOptions, cancellationToken).ConfigureAwait(false);
+            _password = await ReadBase64EncodedLineAsync(context.Pipe.Input, context.ServerOptions, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
@@ -176,12 +176,12 @@ namespace Nager.SmtpServerCore.Protocol
         /// Read a Base64 encoded line.
         /// </summary>
         /// <param name="reader">The pipe to read from.</param>
-        /// <param name="maxMessageSizeOptions">The max message size options</param>
+        /// <param name="serverOptions">The server options that define the size limits.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The decoded Base64 string.</returns>
-        static async Task<string> ReadBase64EncodedLineAsync(PipeReader reader, IMaxMessageSizeOptions maxMessageSizeOptions, CancellationToken cancellationToken)
+        static async Task<string> ReadBase64EncodedLineAsync(PipeReader reader, ISmtpServerOptions serverOptions, CancellationToken cancellationToken)
         {
-            var text = await reader.ReadLineAsync(maxMessageSizeOptions, cancellationToken);
+            var text = await reader.ReadLineAsync(serverOptions.MaxMessageSizeOptions, serverOptions.MaxLineLength, cancellationToken).ConfigureAwait(false);
 
             return text == null ? string.Empty : DecodeBase64(text);
         }

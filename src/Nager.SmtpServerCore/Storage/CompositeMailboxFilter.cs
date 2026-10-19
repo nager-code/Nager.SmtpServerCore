@@ -27,8 +27,8 @@ namespace Nager.SmtpServerCore.Storage
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Returns true if the mailbox is accepted, false if not.</returns>
         public async Task<bool> CanAcceptFromAsync(
-            ISessionContext context, 
-            IMailbox @from, 
+            ISessionContext context,
+            IMailbox @from,
             int size,
             CancellationToken cancellationToken = default)
         {
@@ -51,8 +51,8 @@ namespace Nager.SmtpServerCore.Storage
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Returns true if the mailbox can be delivered to, false if not.</returns>
         public async Task<bool> CanDeliverToAsync(
-            ISessionContext context, 
-            IMailbox to, 
+            ISessionContext context,
+            IMailbox to,
             IMailbox @from,
             CancellationToken cancellationToken = default)
         {
