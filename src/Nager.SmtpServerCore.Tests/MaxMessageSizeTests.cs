@@ -1,7 +1,10 @@
-﻿using Nager.SmtpServerCore.IO;
+﻿using Nager.SmtpServerCore.ComponentModel;
+using Nager.SmtpServerCore.IO;
+using Nager.SmtpServerCore.Mail;
 using Nager.SmtpServerCore.Protocol;
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
 using System.Text;
@@ -36,6 +39,38 @@ namespace Nager.SmtpServerCore.Tests
 
             Assert.Equal(1024, options.MaxMessageSizeOptions.Length);
             Assert.Equal(MaxMessageSizeHandling.Strict, options.MaxMessageSizeOptions.Handling);
+        }
+
+        [Fact]
+        public async Task Default_IsAdvertisedInEhlo()
+        {
+            var (context, output) = CreateContext(new SmtpServerOptionsBuilder().ServerName("localhost").Build());
+
+            await new EhloCommand("client.example.com").ExecuteAsync(context, Cancellation);
+
+            Assert.Contains($"SIZE {SmtpServerOptionsBuilder.DefaultMaxMessageSize}\r\n", Encoding.ASCII.GetString(output.ToArray()));
+        }
+
+        [Fact]
+        public async Task Default_RejectsADeclaredSizeAboveTheLimit()
+        {
+            var (context, output) = CreateContext(new SmtpServerOptionsBuilder().ServerName("localhost").Build());
+            var parameters = new Dictionary<string, string> { { "SIZE", (SmtpServerOptionsBuilder.DefaultMaxMessageSize + 1L).ToString() } };
+
+            var successful = await new MailCommand(new Mailbox("sender@example.com"), parameters).ExecuteAsync(context, Cancellation);
+
+            Assert.False(successful);
+            Assert.StartsWith("552 ", Encoding.ASCII.GetString(output.ToArray()));
+        }
+
+        [Fact]
+        public async Task WithoutLength_SizeIsNotAdvertisedInEhlo()
+        {
+            var (context, output) = CreateContext(new SmtpServerOptionsBuilder().ServerName("localhost").MaxMessageSize(0).Build());
+
+            await new EhloCommand("client.example.com").ExecuteAsync(context, Cancellation);
+
+            Assert.DoesNotContain("SIZE", Encoding.ASCII.GetString(output.ToArray()));
         }
 
         [Fact]
@@ -82,6 +117,18 @@ namespace Nager.SmtpServerCore.Tests
                 Cancellation);
 
             Assert.Equal("NOOP", line);
+        }
+
+        static (SmtpSessionContext Context, MemoryStream Output) CreateContext(ISmtpServerOptions options)
+        {
+            var output = new MemoryStream();
+
+            var context = new SmtpSessionContext(new ServiceProvider(), options, new EndpointDefinitionBuilder().Build())
+            {
+                Pipe = new SecurableDuplexPipe(output, () => { })
+            };
+
+            return (context, output);
         }
 
         static async Task<string?> ReadDotBlockAsync(PipeReader reader, IMaxMessageSizeOptions maxMessageSizeOptions)
