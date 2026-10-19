@@ -60,7 +60,7 @@ namespace Nager.SmtpServerCore.Protocol
             }
             catch (SmtpResponseException)
             {
-                return false;
+                throw;
             }
             catch (Exception)
             {
