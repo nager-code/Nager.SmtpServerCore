@@ -27,7 +27,7 @@ namespace Nager.SmtpServerCore.Tests
             var maxMessageSizeOptions = new MaxMessageSizeOptions();
 
             // act
-            var line = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, cancellationToken: TestContext.Current.CancellationToken);
+            var line = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, SmtpServerOptionsBuilder.DefaultMaxLineLength, cancellationToken: TestContext.Current.CancellationToken);
 
             // assert
             Assert.Equal(5, line.Length);
@@ -44,7 +44,7 @@ namespace Nager.SmtpServerCore.Tests
             var maxMessageSizeOptions = new MaxMessageSizeOptions();
 
             // act
-            var line = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, cancellationToken: TestContext.Current.CancellationToken);
+            var line = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, SmtpServerOptionsBuilder.DefaultMaxLineLength, cancellationToken: TestContext.Current.CancellationToken);
 
             // assert
             Assert.Equal(7, line.Length);
@@ -61,9 +61,9 @@ namespace Nager.SmtpServerCore.Tests
             var maxMessageSizeOptions = new MaxMessageSizeOptions();
 
             // act
-            var line1 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, cancellationToken: TestContext.Current.CancellationToken);
-            var line2 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, cancellationToken: TestContext.Current.CancellationToken);
-            var line3 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, cancellationToken: TestContext.Current.CancellationToken);
+            var line1 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, SmtpServerOptionsBuilder.DefaultMaxLineLength, cancellationToken: TestContext.Current.CancellationToken);
+            var line2 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, SmtpServerOptionsBuilder.DefaultMaxLineLength, cancellationToken: TestContext.Current.CancellationToken);
+            var line3 = await reader.ReadLineAsync(Encoding.ASCII, maxMessageSizeOptions, SmtpServerOptionsBuilder.DefaultMaxLineLength, cancellationToken: TestContext.Current.CancellationToken);
 
             // assert
             Assert.Equal("abcde", line1);
