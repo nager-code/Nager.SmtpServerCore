@@ -36,6 +36,11 @@ namespace Nager.SmtpServerCore.Protocol
 
             await context.Pipe.UpgradeAsync(certificate, protocols, cancellationToken).ConfigureAwait(false);
 
+            // RFC 3207 4.2: anything that was obtained from the client before the TLS negotiation must be discarded,
+            // the client has to start over with EHLO
+            context.Authentication = AuthenticationContext.Unauthenticated;
+            context.Transaction.Reset();
+
             return true;
         }
     }
