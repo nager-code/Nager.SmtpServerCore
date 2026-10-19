@@ -15,7 +15,6 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [*.cs]
-end_of_line = crlf
 # The C# sources are stored with a UTF-8 byte order mark
 charset = utf-8-bom
 
