@@ -5,7 +5,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Nager.SmtpServerCore.Protocol
 {
@@ -832,7 +831,7 @@ namespace Nager.SmtpServerCore.Protocol
 
             static Mailbox CreateMailbox(ReadOnlySequence<byte> localpart, ReadOnlySequence<byte> domainOrAddress)
             {
-                var tempLocalpart = StringUtil.Create(localpart, Encoding.UTF8)?.Trim('"');
+                var tempLocalpart = StringUtil.Create(localpart, Encoding.UTF8);
                 if (tempLocalpart == null)
                 {
                     return null;
@@ -844,9 +843,31 @@ namespace Nager.SmtpServerCore.Protocol
                     return null;
                 }
 
-                var unescapedLocalpart = Regex.Unescape(tempLocalpart);
+                return new Mailbox(UnquoteLocalPart(tempLocalpart), tempDomain);
+            }
 
-                return new Mailbox(unescapedLocalpart, tempDomain);
+            // removes the surrounding quotes of a quoted-string and resolves its quoted-pairs ("\" %d32-126) to the
+            // character itself, the grammar does not allow any other escape sequence and no control characters
+            static string UnquoteLocalPart(string localpart)
+            {
+                if (localpart.Length < 2 || localpart[0] != '"' || localpart[localpart.Length - 1] != '"')
+                {
+                    return localpart;
+                }
+
+                var builder = new StringBuilder(localpart.Length - 2);
+
+                for (var i = 1; i < localpart.Length - 1; i++)
+                {
+                    if (localpart[i] == '\\' && i + 1 < localpart.Length - 1)
+                    {
+                        i++;
+                    }
+
+                    builder.Append(localpart[i]);
+                }
+
+                return builder.ToString();
             }
         }
 

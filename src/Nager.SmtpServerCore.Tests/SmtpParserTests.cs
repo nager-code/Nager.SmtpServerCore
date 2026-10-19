@@ -372,6 +372,11 @@ namespace Nager.SmtpServerCore.Tests
         [InlineData(@"!def!xyz%abc@example.com", "!def!xyz%abc", "example.com")]
         [InlineData(@"_somename@example.com", "_somename", "example.com")]
         [InlineData(@"somename@127.0.0.1", "somename", "127.0.0.1")]
+        [InlineData(@"""a\x0D\x0Ab""@example.com", "ax0Dx0Ab", "example.com")]
+        [InlineData(@"""a\r\nb""@example.com", "arnb", "example.com")]
+        [InlineData(@"""a\u0000b""@example.com", "au0000b", "example.com")]
+        [InlineData(@"""a\qb""@example.com", "aqb", "example.com")]
+        [InlineData(@"""\""quoted\""""@example.com", "\"quoted\"", "example.com")]
         public void CanMakeMailbox(string email, string user, string host)
         {
             // arrange
@@ -384,6 +389,26 @@ namespace Nager.SmtpServerCore.Tests
             Assert.True(made);
             Assert.Equal(user, mailbox.User);
             Assert.Equal(host, mailbox.Host);
+        }
+
+        [Theory]
+        [InlineData(@"MAIL FROM:<""a\x0D\x0AX-Injected: 1""@example.com>")]
+        [InlineData(@"MAIL FROM:<""a\u000D\u000Ab""@example.com>")]
+        [InlineData(@"MAIL FROM:<""a\0b""@example.com>")]
+        [InlineData(@"MAIL FROM:<""a\qb""@example.com>")]
+        public void CanNotInjectControlCharactersIntoTheLocalPart(string input)
+        {
+            // arrange
+            var buffer = Encoding.UTF8.GetBytes(input);
+            var sequence = new ReadOnlySequence<byte>(buffer, 0, buffer.Length);
+
+            // act
+            var result = Parser.TryMake(ref sequence, out var command, out var errorResponse);
+
+            // assert
+            Assert.True(result);
+            var user = ((MailCommand)command).Address.User;
+            Assert.DoesNotContain(user, char.IsControl);
         }
 
         [Fact]
