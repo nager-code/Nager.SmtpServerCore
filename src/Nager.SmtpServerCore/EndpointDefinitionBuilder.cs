@@ -187,7 +187,7 @@ namespace Nager.SmtpServerCore
             public StaticCertificateFactory(X509Certificate serverCertificate)
             {
                 _serverCertificate = serverCertificate;
-            }            
+            }
 
             public X509Certificate GetServerCertificate(ISessionContext sessionContext)
             {

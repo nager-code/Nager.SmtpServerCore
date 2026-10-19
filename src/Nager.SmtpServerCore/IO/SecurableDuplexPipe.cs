@@ -47,7 +47,7 @@ namespace Nager.SmtpServerCore.IO
                         ServerCertificate = certificate,
                         ClientCertificateRequired = false,
                         EnabledSslProtocols = protocols,
-                    }, 
+                    },
                     cancellationToken);
             }
             catch

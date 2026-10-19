@@ -36,7 +36,7 @@ namespace Nager.SmtpServerCore.IO
         {
             return new ReadOnlySequence<byte>(Start, 0, End, End.Memory.Length);
         }
-        
+
         internal ByteArraySegment Start { get; private set; }
 
         internal ByteArraySegment End { get; private set; }

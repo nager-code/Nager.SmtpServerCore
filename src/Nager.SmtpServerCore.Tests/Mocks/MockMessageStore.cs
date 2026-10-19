@@ -18,7 +18,7 @@ namespace Nager.SmtpServerCore.Tests.Mocks
 
         public override Task<SmtpResponse> SaveAsync(ISessionContext context, IMessageTransaction transaction, ReadOnlySequence<byte> buffer, CancellationToken cancellationToken)
         {
-            Messages.Add(new MockMessage(transaction, buffer));;
+            Messages.Add(new MockMessage(transaction, buffer));
 
             return Task.FromResult(SmtpResponse.Ok);
         }
@@ -31,7 +31,7 @@ namespace Nager.SmtpServerCore.Tests.Mocks
         public MockMessage(IMessageTransaction transaction, ReadOnlySequence<byte> buffer)
         {
             Transaction = transaction;
-            
+
             using var stream = new MemoryStream(buffer.ToArray());
 
             MimeMessage = MimeMessage.Load(stream);

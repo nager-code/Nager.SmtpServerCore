@@ -11,7 +11,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -75,8 +74,8 @@ namespace Nager.SmtpServerCore.Tests
         public void CanAuthenticateUser()
         {
             // arrange
-            string user = null;
-            string password = null;
+            string? user = null;
+            string? password = null;
             var userAuthenticator = new DelegatingUserAuthenticator((u, p) =>
             {
                 user = u;
@@ -104,8 +103,8 @@ namespace Nager.SmtpServerCore.Tests
         public void CanFailAuthenticationEmptyUserOrPassword(string user, string password)
         {
             // arrange
-            string actualUser = null;
-            string actualPassword = null;
+            string? actualUser = null;
+            string? actualPassword = null;
             var userAuthenticator = new DelegatingUserAuthenticator((u, p) =>
             {
                 actualUser = u;
@@ -144,23 +143,36 @@ namespace Nager.SmtpServerCore.Tests
             }
         }
 
-        [Fact(Skip = "Command timeout wont work properly until https://github.com/dotnet/corefx/issues/15033")]
-        public void WillTimeoutWaitingForCommand()
+        [Fact]
+        public async Task WillTimeoutWaitingForCommand()
         {
+            var cancellation = TestContext.Current.CancellationToken;
+
             using (CreateServer(c => c.CommandWaitTimeout(TimeSpan.FromSeconds(1))))
             {
-                var client = MailClient.Client();
-                client.NoOp(TestContext.Current.CancellationToken);
+                using var client = new TcpClient();
+                await client.ConnectAsync("localhost", 9025, cancellation);   // Port: derselbe, den MailClient.Client() verwendet
 
+                using var stream = client.GetStream();
+                using var reader = new StreamReader(stream, Encoding.ASCII);
+                using var writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true, NewLine = "\r\n" };
+
+                Assert.StartsWith("220 ", await reader.ReadLineAsync(cancellation));
+
+                // commands that arrive within the timeout keep the session alive
                 for (var i = 0; i < 5; i++)
                 {
-                    Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken).Wait(TestContext.Current.CancellationToken);
-                    client.NoOp(TestContext.Current.CancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(250), cancellation);
+                    await writer.WriteLineAsync("NOOP");
+                    Assert.StartsWith("250 ", await reader.ReadLineAsync(cancellation));
                 }
 
-                Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken).Wait(TestContext.Current.CancellationToken);
+                // stay silent: after the timeout the server must say goodbye and close the connection on its own
+                var goodbye = await reader.ReadLineAsync(cancellation).AsTask().WaitAsync(TimeSpan.FromSeconds(5), cancellation);
+                Assert.NotNull(goodbye);
+                Assert.StartsWith("221 ", goodbye);
 
-                Assert.Throws<IOException>(() => client.NoOp(TestContext.Current.CancellationToken));
+                Assert.Null(await reader.ReadLineAsync(cancellation));   // end of stream: the server closed the connection
             }
         }
 
@@ -218,7 +230,7 @@ namespace Nager.SmtpServerCore.Tests
                 Assert.Fail("data command not successful");
             }
 
-            string smtpResponse = null;
+            string? smtpResponse = null;
 
             _ = Task.Run(async () =>
             {
@@ -318,7 +330,7 @@ namespace Nager.SmtpServerCore.Tests
         {
             using (var disposable = CreateServer())
             {
-                ISessionContext sessionContext = null;
+                ISessionContext? sessionContext = null;
                 var sessionCreatedHandler = new EventHandler<SessionEventArgs>(
                     delegate (object sender, SessionEventArgs args)
                     {
@@ -333,8 +345,6 @@ namespace Nager.SmtpServerCore.Tests
 
                 Assert.False(sessionContext.Pipe.IsSecure);
             }
-
-            ServicePointManager.ServerCertificateValidationCallback = null;
         }
 
         [Fact]
@@ -555,7 +565,7 @@ namespace Nager.SmtpServerCore.Tests
 
             X509Certificate2 certificate = certificateRequest.CreateSelfSigned(notBefore, notAfter);
 
-            return new X509Certificate2(certificate.Export(X509ContentType.Pfx));
+            return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pfx), null);
         }
 
         public static X509Certificate2 CreateCertificate()
