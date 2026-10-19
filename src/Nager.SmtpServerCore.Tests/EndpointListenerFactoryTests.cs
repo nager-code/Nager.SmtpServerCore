@@ -1,4 +1,4 @@
-using Nager.SmtpServerCore.Net;
+﻿using Nager.SmtpServerCore.Net;
 using System.Net;
 using System.Net.Sockets;
 using Xunit;
@@ -78,6 +78,34 @@ namespace Nager.SmtpServerCore.Tests
 
             // act
             var resolved = EndpointListenerFactory.ResolveListenEndpoint(endpoint, osSupportsIPv6: true);
+
+            // assert
+            Assert.Same(endpoint, resolved);
+        }
+
+        [Fact]
+        public void ResolvesIPv4MappedAddressToIPv4WhenIPv6IsNotSupported()
+        {
+            // arrange
+            var endpoint = new IPEndPoint(IPAddress.Parse("::ffff:192.168.1.10"), 25);
+
+            // act
+            var resolved = EndpointListenerFactory.ResolveListenEndpoint(endpoint, osSupportsIPv6: false);
+
+            // assert
+            Assert.Equal(AddressFamily.InterNetwork, resolved.AddressFamily);
+            Assert.Equal(IPAddress.Parse("192.168.1.10"), resolved.Address);
+            Assert.Equal(25, resolved.Port);
+        }
+
+        [Fact]
+        public void KeepsIPv6UnicastEndpointWhenIPv6IsNotSupported()
+        {
+            // arrange: an explicit IPv6 address has no IPv4 equivalent, binding to something else would be wrong
+            var endpoint = new IPEndPoint(IPAddress.Parse("2001:db8::1"), 25);
+
+            // act
+            var resolved = EndpointListenerFactory.ResolveListenEndpoint(endpoint, osSupportsIPv6: false);
 
             // assert
             Assert.Same(endpoint, resolved);
