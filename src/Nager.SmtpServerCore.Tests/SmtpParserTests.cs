@@ -377,6 +377,9 @@ namespace Nager.SmtpServerCore.Tests
         [InlineData(@"""a\u0000b""@example.com", "au0000b", "example.com")]
         [InlineData(@"""a\qb""@example.com", "aqb", "example.com")]
         [InlineData(@"""\""quoted\""""@example.com", "\"quoted\"", "example.com")]
+        [InlineData(@"""\\""@example.com", "\\", "example.com")]
+        [InlineData(@"""a\\\\b""@example.com", "a\\\\b", "example.com")]
+        [InlineData(@"""\ ""@example.com", " ", "example.com")]
         public void CanMakeMailbox(string email, string user, string host)
         {
             // arrange
@@ -396,6 +399,8 @@ namespace Nager.SmtpServerCore.Tests
         [InlineData(@"MAIL FROM:<""a\u000D\u000Ab""@example.com>")]
         [InlineData(@"MAIL FROM:<""a\0b""@example.com>")]
         [InlineData(@"MAIL FROM:<""a\qb""@example.com>")]
+        [InlineData(@"RCPT TO:<""a\x0D\x0AX-Injected: 1""@example.com>")]
+        [InlineData(@"RCPT TO:<""a\0b""@example.com>")]
         public void CanNotInjectControlCharactersIntoTheLocalPart(string input)
         {
             // arrange
@@ -407,8 +412,30 @@ namespace Nager.SmtpServerCore.Tests
 
             // assert
             Assert.True(result);
-            var user = ((MailCommand)command).Address.User;
+            var user = command switch
+            {
+                MailCommand mail => mail.Address.User,
+                RcptCommand rcpt => rcpt.Address.User,
+                _ => throw new InvalidOperationException(command.Name)
+            };
             Assert.DoesNotContain(user, char.IsControl);
+        }
+
+        [Theory]
+        [InlineData(@"MAIL FROM:<""a\""@example.com>")]
+        [InlineData(@"MAIL FROM:<""a\" + "\u0001" + @"b""@example.com>")]
+        public void CanNotMakeMailboxWithAnInvalidQuotedPair(string input)
+        {
+            // arrange: a quoted-pair must be followed by a printable character (%d32-126)
+            var buffer = Encoding.UTF8.GetBytes(input);
+            var sequence = new ReadOnlySequence<byte>(buffer, 0, buffer.Length);
+
+            // act
+            var result = Parser.TryMake(ref sequence, out _, out var errorResponse);
+
+            // assert
+            Assert.False(result);
+            Assert.NotNull(errorResponse);
         }
 
         [Fact]
