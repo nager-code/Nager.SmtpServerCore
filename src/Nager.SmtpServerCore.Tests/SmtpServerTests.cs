@@ -400,9 +400,19 @@ namespace Nager.SmtpServerCore.Tests
             return true;
         }
 
+        /// <summary>
+        /// TLS 1.3 on the server side needs Windows Server 2022 / Windows 11 (build 20348) or newer, and
+        /// the SecureTransport backend on macOS does not support TLS 1.3 at all.
+        /// </summary>
+        static bool IsTls13SupportedByTheOperatingSystem
+            => OperatingSystem.IsMacOS() == false
+               && (OperatingSystem.IsWindows() == false || Environment.OSVersion.Version.Build >= 20348);
+
         [Fact]
         public async Task NegotiatesTls13ByDefault()
         {
+            Assert.SkipUnless(IsTls13SupportedByTheOperatingSystem, "the operating system does not support TLS 1.3 on the server side");
+
             // arrange: an implicit TLS endpoint without an explicit SupportedSslProtocols configuration
             using var disposable = CreateServer(endpoint => endpoint
                 .IsSecure(true)
