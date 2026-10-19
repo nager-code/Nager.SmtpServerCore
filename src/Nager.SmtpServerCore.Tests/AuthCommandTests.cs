@@ -99,6 +99,47 @@ namespace Nager.SmtpServerCore.Tests
         }
 
         [Fact]
+        public async Task Test_Plain_WithAuthorizationIdentityEqualToTheUser_IsAccepted()
+        {
+            var (smtpSessionContext, _) = CreateContext();
+
+            var authCommand = new AuthCommand(AuthenticationMethod.Plain, Base64("test\0test\01234"));
+            var successful = await authCommand.ExecuteAsync(smtpSessionContext, CancellationToken.None);
+
+            Assert.True(successful);
+            Assert.Equal("test", smtpSessionContext.Authentication.User);
+        }
+
+        [Fact]
+        public async Task Test_Plain_WithInvalidBase64OnContinuationLine_RepliesOnce()
+        {
+            var (smtpSessionContext, client) = CreateContext("!!!\r\n");
+
+            var authCommand = new AuthCommand(AuthenticationMethod.Plain, null);
+            var successful = await authCommand.ExecuteAsync(smtpSessionContext, CancellationToken.None);
+
+            Assert.False(successful);
+            Assert.Equal(2, Replies(client).Length);
+            Assert.StartsWith("334 ", Replies(client)[0]);
+            Assert.StartsWith("535 ", Replies(client)[1]);
+            Assert.Equal(1, smtpSessionContext.AuthenticationAttempts);
+        }
+
+        [Fact]
+        public async Task Test_Login_WithWrongPassword_CountsAsFailedAttempt()
+        {
+            var (smtpSessionContext, client) = CreateContext($"{Base64("test")}\r\n{Base64("wrong")}\r\n");
+
+            var authCommand = new AuthCommand(AuthenticationMethod.Login, null);
+            var successful = await authCommand.ExecuteAsync(smtpSessionContext, CancellationToken.None);
+
+            Assert.False(successful);
+            Assert.False(smtpSessionContext.Authentication.IsAuthenticated);
+            Assert.Equal(1, smtpSessionContext.AuthenticationAttempts);
+            Assert.StartsWith("535 ", Replies(client).Last());
+        }
+
+        [Fact]
         public async Task Test_Plain_WithAuthorizationIdentityOfAnotherUser_IsRejected()
         {
             var (smtpSessionContext, _) = CreateContext();
