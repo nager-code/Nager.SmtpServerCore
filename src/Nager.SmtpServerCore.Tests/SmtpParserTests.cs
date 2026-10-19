@@ -1,4 +1,5 @@
-﻿using Nager.SmtpServerCore.Mail;
+﻿using Nager.SmtpServerCore.IO;
+using Nager.SmtpServerCore.Mail;
 using Nager.SmtpServerCore.Protocol;
 using Nager.SmtpServerCore.Text;
 using System;
@@ -471,6 +472,49 @@ namespace Nager.SmtpServerCore.Tests
             // assert
             Assert.True(made);
             Assert.Equal("[ 127.0.0.1 ]", StringUtil.Create(address));
+        }
+
+        [Fact]
+        public void CanMakeMailWithParametersAcrossMultipleSegments()
+        {
+            // arrange
+            var segments = new ByteArraySegmentList();
+            segments.Append(Encoding.ASCII.GetBytes("MAIL FROM:<test@exam"));
+            segments.Append(Encoding.ASCII.GetBytes("ple.com> SI"));
+            segments.Append(Encoding.ASCII.GetBytes("ZE=1000 BODY=8BIT"));
+            segments.Append(Encoding.ASCII.GetBytes("MIME"));
+            var sequence = segments.Build();
+
+            // act
+            var result = Parser.TryMake(ref sequence, out var command, out var errorResponse);
+
+            // assert
+            Assert.False(sequence.IsSingleSegment);
+            Assert.True(result);
+            var mailCommand = Assert.IsType<MailCommand>(command);
+            Assert.Equal("test", mailCommand.Address.User);
+            Assert.Equal("example.com", mailCommand.Address.Host);
+            Assert.Equal("1000", mailCommand.Parameters["SIZE"]);
+            Assert.Equal("8BITMIME", mailCommand.Parameters["BODY"]);
+        }
+
+        [Theory]
+        [InlineData("MAIL FROM:<test@example.com> SIZE=1 SIZE=2")]
+        [InlineData("MAIL FROM:<test@example.com> SIZE=1 size=2")]
+        [InlineData("MAIL FROM:<test@example.com> BODY=8BITMIME SIZE=1 BODY=7BIT")]
+        public void CanNotMakeMailWithDuplicateParameters(string input)
+        {
+            // arrange
+            var buffer = Encoding.ASCII.GetBytes(input);
+            var sequence = new ReadOnlySequence<byte>(buffer, 0, buffer.Length);
+
+            // act
+            var exception = Record.Exception(() => Parser.TryMake(ref sequence, out _, out _));
+
+            // assert
+            var responseException = Assert.IsType<SmtpResponseException>(exception);
+            Assert.Equal(SmtpReplyCode.SyntaxError, responseException.Response.ReplyCode);
+            Assert.False(responseException.IsQuitRequested);
         }
 
         [Fact]

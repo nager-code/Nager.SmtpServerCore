@@ -1549,7 +1549,11 @@ namespace Nager.SmtpServerCore.Protocol
                 }
 
                 dictionary ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                dictionary.Add(StringUtil.Create(keyword), StringUtil.Create(value));
+
+                if (dictionary.TryAdd(StringUtil.Create(keyword), StringUtil.Create(value)) == false)
+                {
+                    throw new SmtpResponseException(new SmtpResponse(SmtpReplyCode.SyntaxError, "duplicate parameter"));
+                }
 
                 reader.Skip(TokenKind.Space);
             }
