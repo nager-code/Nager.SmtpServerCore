@@ -4,7 +4,6 @@ using Nager.SmtpServerCore.IO;
 using System;
 using System.IO.Pipelines;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,6 +18,8 @@ namespace Nager.SmtpServerCore.Protocol
         /// Smtp Auth Command
         /// </summary>
         public const string Command = "AUTH";
+
+        const int MaxStackAllocLength = 1024;
 
         string _user;
         string _password;
@@ -51,43 +52,27 @@ namespace Nager.SmtpServerCore.Protocol
                 return false;
             }
 
-            switch (Method)
+            var credentialsReceived = Method switch
             {
-                case AuthenticationMethod.Plain:
-                    if (await TryPlainAsync(context, cancellationToken).ConfigureAwait(false) == false)
-                    {
-                        await context.Pipe.Output.WriteReplyAsync(SmtpResponse.AuthenticationFailed, cancellationToken).ConfigureAwait(false);
-                        return false;
-                    }
-                    break;
+                AuthenticationMethod.Plain => await TryPlainAsync(context, cancellationToken).ConfigureAwait(false),
+                AuthenticationMethod.Login => await TryLoginAsync(context, cancellationToken).ConfigureAwait(false),
+                _ => false
+            };
 
-                case AuthenticationMethod.Login:
-                    if (await TryLoginAsync(context, cancellationToken).ConfigureAwait(false) == false)
-                    {
-                        await context.Pipe.Output.WriteReplyAsync(SmtpResponse.AuthenticationFailed, cancellationToken).ConfigureAwait(false);
-                        return false;
-                    }
-                    break;
-            }
-
-            var userAuthenticator = context.ServiceProvider.GetService<IUserAuthenticatorFactory, IUserAuthenticator>(context, UserAuthenticator.Default);
-
-            using (var container = new DisposableContainer<IUserAuthenticator>(userAuthenticator))
+            // malformed credentials count as a failed attempt as well, otherwise they could be sent without any limit
+            if (credentialsReceived == false || await AuthenticateAsync(context, cancellationToken).ConfigureAwait(false) == false)
             {
-                if (await container.Instance.AuthenticateAsync(context, _user, _password, cancellationToken).ConfigureAwait(false) == false)
+                var remaining = context.ServerOptions.MaxAuthenticationAttempts - ++context.AuthenticationAttempts;
+                var response = new SmtpResponse(SmtpReplyCode.AuthenticationFailed, $"authentication failed, {remaining} attempt(s) remaining.");
+
+                await context.Pipe.Output.WriteReplyAsync(response, cancellationToken).ConfigureAwait(false);
+
+                if (remaining <= 0)
                 {
-                    var remaining = context.ServerOptions.MaxAuthenticationAttempts - ++context.AuthenticationAttempts;
-                    var response = new SmtpResponse(SmtpReplyCode.AuthenticationFailed, $"authentication failed, {remaining} attempt(s) remaining.");
-
-                    await context.Pipe.Output.WriteReplyAsync(response, cancellationToken).ConfigureAwait(false);
-
-                    if (remaining <= 0)
-                    {
-                        throw new SmtpResponseException(SmtpResponse.ServiceClosingTransmissionChannel, true);
-                    }
-
-                    return false;
+                    throw new SmtpResponseException(SmtpResponse.ServiceClosingTransmissionChannel, true);
                 }
+
+                return false;
             }
 
             await context.Pipe.Output.WriteReplyAsync(SmtpResponse.AuthenticationSuccessful, cancellationToken).ConfigureAwait(false);
@@ -96,6 +81,21 @@ namespace Nager.SmtpServerCore.Protocol
             context.RaiseSessionAuthenticated();
 
             return true;
+        }
+
+        /// <summary>
+        /// Authenticate the user name and password combination that was received.
+        /// </summary>
+        /// <param name="context">The execution context to operate on.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>true if the user was authenticated, false if not.</returns>
+        async Task<bool> AuthenticateAsync(ISessionContext context, CancellationToken cancellationToken)
+        {
+            var userAuthenticator = context.ServiceProvider.GetService<IUserAuthenticatorFactory, IUserAuthenticator>(context, UserAuthenticator.Default);
+
+            using var container = new DisposableContainer<IUserAuthenticator>(userAuthenticator);
+
+            return await container.Instance.AuthenticateAsync(context, _user, _password, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -115,13 +115,7 @@ namespace Nager.SmtpServerCore.Protocol
                 authentication = await context.Pipe.Input.ReadLineAsync(Encoding.ASCII, context.ServerOptions.MaxMessageSizeOptions, context.ServerOptions.MaxLineLength, cancellationToken).ConfigureAwait(false);
             }
 
-            if (TryExtractFromBase64(authentication) == false)
-            {
-                await context.Pipe.Output.WriteReplyAsync(SmtpResponse.AuthenticationFailed, cancellationToken).ConfigureAwait(false);
-                return false;
-            }
-
-            return true;
+            return TryExtractFromBase64(authentication);
         }
 
         /// <summary>
@@ -129,17 +123,24 @@ namespace Nager.SmtpServerCore.Protocol
         /// </summary>
         /// <param name="base64">The base64 encoded string to extract the user name and password from.</param>
         /// <returns>true if the user name and password were extracted from the base64 encoded string, false if not.</returns>
+        /// <remarks><![CDATA[[authzid] NUL authcid NUL passwd (RFC 4616)]]></remarks>
         bool TryExtractFromBase64(string base64)
         {
-            var match = Regex.Match(DecodeBase64(base64), "\x0000(?<user>.*)\x0000(?<password>.*)");
+            var parts = DecodeBase64(base64).Split('\0');
 
-            if (match.Success == false)
+            if (parts.Length != 3)
             {
                 return false;
             }
 
-            _user = match.Groups["user"].Value;
-            _password = match.Groups["password"].Value;
+            // acting on behalf of another identity is not supported
+            if (parts[0].Length > 0 && parts[0] != parts[1])
+            {
+                return false;
+            }
+
+            _user = parts[1];
+            _password = parts[2];
 
             return true;
         }
@@ -190,9 +191,9 @@ namespace Nager.SmtpServerCore.Protocol
         {
             if (string.IsNullOrEmpty(parameter)) return string.Empty;
 
-            // Allocate memory on the stack for performance
+            // Allocate memory on the stack for performance, the length is controlled by the client so larger inputs go to the heap
             // Max size required is approximately 3/4 the length of the Base64 string
-            Span<byte> buffer = stackalloc byte[parameter.Length];
+            Span<byte> buffer = parameter.Length <= MaxStackAllocLength ? stackalloc byte[parameter.Length] : new byte[parameter.Length];
 
             if (Convert.TryFromBase64String(parameter, buffer, out int bytesWritten))
             {
