@@ -45,7 +45,7 @@ namespace Nager.SmtpServerCore.Protocol
         {
             context.Authentication = AuthenticationContext.Unauthenticated;
 
-            if (context.ServiceProvider.GetService(typeof(IUserAuthenticatorFactory)) == null)
+            if (context.ServiceProvider.HasService<IUserAuthenticatorFactory, IUserAuthenticator>() == false)
             {
                 await context.Pipe.Output.WriteReplyAsync(SmtpResponse.CommandNotImplemented, cancellationToken).ConfigureAwait(false);
                 return false;
