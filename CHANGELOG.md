@@ -1,5 +1,21 @@
 # Change Log
 
+## Unreleased
+
+Entries for the open pull requests, remove the ones that are not merged.
+
+- Changed: Messages are limited to 25 MB by default (`MaxMessageSizeHandling.Strict`). `MaxMessageSize(length)` now defaults to `Strict`, a length of `0` disables the limit. (#13)
+- Changed: `SupportedSslProtocols` defaults to `SslProtocols.None`, the operating system chooses the protocol (enables TLS 1.3). Use `SupportedSslProtocols(SslProtocols.Tls12 | SslProtocols.Tls13)` to restrict it explicitly. (#8)
+- Changed: After `STARTTLS` the session state (EHLO, authentication, transaction) is discarded per RFC 3207, the client has to send EHLO again. (#17)
+- Fixed: Listener creation for IPv4 endpoints and for hosts without IPv6 support. (#1)
+- Fixed: `AUTH` replied `502` when only an `IUserAuthenticator` without a factory was registered in a custom `IServiceProvider`, although EHLO advertised AUTH. (#4)
+- Fixed: `554` reply without text, text-less replies no longer end with a trailing space. (#9)
+- Fixed: Quoted local parts are unquoted per RFC 5321 instead of `Regex.Unescape`, control characters can no longer be injected into the mailbox. (#14)
+- Fixed: Unhandled exceptions for ESMTP parameters that span multiple buffer segments and for duplicate parameters (now `501`). (#15)
+- Fixed: `AUTH PLAIN` is parsed per RFC 4616, malformed credentials get a single `535` reply and count as a failed attempt. (#16)
+- Fixed: An empty message (`.<CRLF>` directly after `DATA`) no longer hangs the session, the dot-stuffing of the first line is removed. (#18)
+- Improved: Tests for the state machine and the retry handling. (#19)
+
 ## v11.1.0
 
 - Added: Configuration option to define the maximum allowed message size.
