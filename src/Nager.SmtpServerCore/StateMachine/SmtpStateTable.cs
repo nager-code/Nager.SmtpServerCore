@@ -22,7 +22,7 @@ namespace Nager.SmtpServerCore.StateMachine
                 { NoopCommand.Command },
                 { RsetCommand.Command },
                 { QuitCommand.Command },
-                { StartTlsCommand.Command, CanAcceptStartTls, SmtpStateId.WaitingForMailSecure },
+                { StartTlsCommand.Command, CanAcceptStartTls, SmtpStateId.Initialized },
                 { AuthCommand.Command, context => context.EndpointDefinition.AllowUnsecureAuthentication && context.Authentication.IsAuthenticated == false },
                 { HeloCommand.Command, SmtpStateId.WaitingForMail },
                 { EhloCommand.Command, SmtpStateId.WaitingForMail },
