@@ -34,6 +34,52 @@ namespace Nager.SmtpServerCore.Tests
         }
 
         [Fact]
+        public async Task EmptyMessage_RepliesWith250()
+        {
+            var smtp = SmtpTestSession.Create(EndOfData, MessageStore.Default);
+
+            var successful = await smtp.ExecuteDataCommandAsync().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.True(successful);
+            Assert.EndsWith("250 Ok\r\n", smtp.ServerOutput);
+        }
+
+        [Fact]
+        public async Task EmptyMessage_EndToEnd_IsAcceptedAndTheSessionContinues()
+        {
+            var dialogue = string.Concat(
+                "EHLO client.example.com\r\n",
+                "MAIL FROM:<sender@example.com>\r\n",
+                "RCPT TO:<recipient@example.com>\r\n",
+                "DATA\r\n",
+                EndOfData,
+                "QUIT\r\n");
+            var smtp = SmtpTestSession.Create(dialogue, MessageStore.Default);
+
+            await smtp.RunSessionAsync().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            var output = smtp.ServerOutput;
+            var acceptedAt = output.IndexOf("354 ", StringComparison.Ordinal);
+            var storedAt = output.IndexOf("250 Ok\r\n221 ", StringComparison.Ordinal);
+
+            Assert.True(acceptedAt >= 0, $"354 reply for DATA is missing in the server output:\r\n{output}");
+            Assert.True(storedAt > acceptedAt, $"the empty message must be stored and QUIT must still be processed:\r\n{output}");
+        }
+
+        [Fact]
+        public async Task DotStuffedFirstLine_IsUnstuffed()
+        {
+            string? stored = null;
+            var store = new DelegatingMessageStore(buffer => stored = Encoding.ASCII.GetString(buffer.ToArray()));
+            var smtp = SmtpTestSession.Create("..first\r\nsecond\r\n" + EndOfData, store);
+
+            var successful = await smtp.ExecuteDataCommandAsync().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.True(successful);
+            Assert.Equal(".first\r\nsecond", stored);
+        }
+
+        [Fact]
         public async Task RejectedMessage_PropagatesTheResponseExceptionToTheSession()
         {
             // DataCommand must not swallow the exception: SmtpSession writes the reply,
@@ -181,6 +227,23 @@ namespace Nager.SmtpServerCore.Tests
             public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
             public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
             public override void SetLength(long value) => throw new NotSupportedException();
+        }
+
+        sealed class DelegatingMessageStore : MessageStore
+        {
+            readonly Action<ReadOnlySequence<byte>> _onSave;
+
+            public DelegatingMessageStore(Action<ReadOnlySequence<byte>> onSave)
+            {
+                _onSave = onSave;
+            }
+
+            public override Task<SmtpResponse> SaveAsync(ISessionContext context, IMessageTransaction transaction, ReadOnlySequence<byte> buffer, CancellationToken cancellationToken)
+            {
+                _onSave(buffer);
+
+                return Task.FromResult(SmtpResponse.Ok);
+            }
         }
 
         sealed class ThrowingMessageStore : MessageStore
