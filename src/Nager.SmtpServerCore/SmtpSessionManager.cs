@@ -45,10 +45,13 @@ namespace Nager.SmtpServerCore
 
             using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, sessionTimeoutCancellationTokenSource.Token);
 
-            await _sessionLimitSemaphore.WaitAsync(cancellationToken);
+            var sessionSlotAcquired = false;
 
             try
             {
+                await _sessionLimitSemaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
+                sessionSlotAcquired = true;
+
                 _smtpServer.OnSessionCreated(new SessionEventArgs(handle.SessionContext));
 
                 await UpgradeAsync(handle, linkedTokenSource.Token);
@@ -69,11 +72,14 @@ namespace Nager.SmtpServerCore
             }
             finally
             {
-                await handle.SessionContext.Pipe.Input.CompleteAsync();
+                await handle.SessionContext.Pipe.Input.CompleteAsync().ConfigureAwait(false);
 
                 handle.SessionContext.Pipe.Dispose();
 
-                _sessionLimitSemaphore.Release();
+                if (sessionSlotAcquired)
+                {
+                    _sessionLimitSemaphore.Release();
+                }
             }
         }
 
