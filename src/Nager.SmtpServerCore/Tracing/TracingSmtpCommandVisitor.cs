@@ -1,4 +1,4 @@
-using Nager.SmtpServerCore.Mail;
+﻿using Nager.SmtpServerCore.Mail;
 using Nager.SmtpServerCore.Protocol;
 using System;
 using System.IO;
@@ -44,7 +44,7 @@ namespace Nager.SmtpServerCore.Tracing
         {
             _output.WriteLine("DATA");
         }
-        
+
         /// <summary>
         /// Visit a HELO command.
         /// </summary>
@@ -69,7 +69,7 @@ namespace Nager.SmtpServerCore.Tracing
         /// <param name="command">The command that is being visited.</param>
         protected override void Visit(MailCommand command)
         {
-            _output.WriteLine("MAIL: Address={0} Parameters={1}", 
+            _output.WriteLine("MAIL: Address={0} Parameters={1}",
                 command.Address.AsAddress(),
                 string.Join(",", command.Parameters.Select(kvp => $"{kvp.Key}={kvp.Value}")));
         }

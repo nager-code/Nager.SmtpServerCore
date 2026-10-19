@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Nager.SmtpServerCore.StateMachine
 {
-    internal sealed class SmtpStateMachine 
+    internal sealed class SmtpStateMachine
     {
         readonly SmtpSessionContext _context;
         SmtpState _state;
@@ -40,7 +40,7 @@ namespace Nager.SmtpServerCore.StateMachine
             _transition = transition;
             return true;
         }
-        
+
         /// <summary>
         /// Accept the state and transition to the new state.
         /// </summary>

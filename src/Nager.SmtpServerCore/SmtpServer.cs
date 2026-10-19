@@ -159,7 +159,7 @@ namespace Nager.SmtpServerCore
             while (cancellationTokenSource.Token.IsCancellationRequested == false)
             {
                 var sessionContext = new SmtpSessionContext(_serviceProvider, _options, endpointDefinition);
-                
+
                 try
                 {
                     // wait for a client connection

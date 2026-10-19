@@ -31,7 +31,7 @@ namespace Nager.SmtpServerCore.Tests.Mocks
         public MockMessage(IMessageTransaction transaction, ReadOnlySequence<byte> buffer)
         {
             Transaction = transaction;
-            
+
             using var stream = new MemoryStream(buffer.ToArray());
 
             MimeMessage = MimeMessage.Load(stream);
