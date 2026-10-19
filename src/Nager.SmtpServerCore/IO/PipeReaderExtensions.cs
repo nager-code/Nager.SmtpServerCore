@@ -15,6 +15,8 @@ namespace Nager.SmtpServerCore.IO
         static readonly byte[] CRLF = { 13, 10 };
         static readonly byte[] DotBlock = { 13, 10, 46, 13, 10 };
         static readonly byte[] DotBlockStuffing = { 13, 10, 46, 46 };
+        static readonly byte[] EmptyDotBlock = { 46, 13, 10 };
+        static readonly byte[] FirstLineStuffing = { 46, 46 };
 
         /// <summary>
         /// Read from the reader until the sequence is found.
@@ -159,6 +161,21 @@ namespace Nager.SmtpServerCore.IO
                 throw new ArgumentNullException(nameof(reader));
             }
 
+            // the block starts right after the CRLF of the DATA command, which has already been consumed,
+            // so an empty message is terminated by ".<CRLF>" alone and would never match the terminating sequence
+            var read = await reader.ReadAtLeastAsync(EmptyDotBlock.Length, cancellationToken);
+
+            if (StartsWith(read.Buffer, EmptyDotBlock))
+            {
+                reader.AdvanceTo(read.Buffer.GetPosition(EmptyDotBlock.Length));
+
+                await func(ReadOnlySequence<byte>.Empty);
+
+                return;
+            }
+
+            reader.AdvanceTo(read.Buffer.Start);
+
             await ReadUntilAsync(
                 reader,
                 DotBlock,
@@ -174,7 +191,8 @@ namespace Nager.SmtpServerCore.IO
 
             static ReadOnlySequence<byte> Unstuff(ReadOnlySequence<byte> buffer)
             {
-                var head = buffer.GetPosition(0);
+                // the first line is not preceded by a CRLF within the block
+                var head = StartsWith(buffer, FirstLineStuffing) ? buffer.GetPosition(1) : buffer.GetPosition(0);
                 var start = head;
 
                 var segments = new ByteArraySegmentList();
@@ -194,6 +212,19 @@ namespace Nager.SmtpServerCore.IO
 
                 return segments.Build();
             }
+        }
+
+        static bool StartsWith(ReadOnlySequence<byte> buffer, ReadOnlySpan<byte> value)
+        {
+            if (buffer.Length < value.Length)
+            {
+                return false;
+            }
+
+            Span<byte> start = stackalloc byte[value.Length];
+            buffer.Slice(0, value.Length).CopyTo(start);
+
+            return start.SequenceEqual(value);
         }
     }
 }

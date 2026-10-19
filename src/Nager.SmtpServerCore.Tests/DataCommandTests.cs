@@ -34,6 +34,17 @@ namespace Nager.SmtpServerCore.Tests
         }
 
         [Fact]
+        public async Task EmptyMessage_RepliesWith250()
+        {
+            var smtp = SmtpTestSession.Create(EndOfData, MessageStore.Default);
+
+            var successful = await smtp.ExecuteDataCommandAsync().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.True(successful);
+            Assert.EndsWith("250 Ok\r\n", smtp.ServerOutput);
+        }
+
+        [Fact]
         public async Task RejectedMessage_PropagatesTheResponseExceptionToTheSession()
         {
             // DataCommand must not swallow the exception: SmtpSession writes the reply,
