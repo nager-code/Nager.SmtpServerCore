@@ -11,6 +11,11 @@ namespace Nager.SmtpServerCore.IO
 {
     internal sealed class SecurableDuplexPipe : ISecurableDuplexPipe
     {
+        const int InputBufferSize = 16 * 1024;
+        const int MinimumReadSize = 1024;
+
+        static readonly StreamPipeReaderOptions ReaderOptions = new StreamPipeReaderOptions(bufferSize: InputBufferSize, minimumReadSize: MinimumReadSize);
+
         readonly Action _disposeAction;
         Stream _stream;
         bool _disposed;
@@ -25,13 +30,7 @@ namespace Nager.SmtpServerCore.IO
             _stream = stream;
             _disposeAction = disposeAction;
 
-            const int InputBufferSize = 16 * 1024;
-
-            var streamPipeReaderOptions = new StreamPipeReaderOptions(
-                bufferSize: InputBufferSize,
-                minimumReadSize: 1024);
-
-            Input = PipeReader.Create(_stream, streamPipeReaderOptions);
+            Input = PipeReader.Create(_stream, ReaderOptions);
             Output = PipeWriter.Create(_stream);
         }
 
@@ -48,7 +47,6 @@ namespace Nager.SmtpServerCore.IO
                         ServerCertificate = certificate,
                         ClientCertificateRequired = false,
                         EnabledSslProtocols = protocols,
-                        CertificateRevocationCheckMode = X509RevocationMode.Online
                     },
                     cancellationToken);
             }
@@ -60,7 +58,7 @@ namespace Nager.SmtpServerCore.IO
 
             _stream = sslStream;
 
-            Input = PipeReader.Create(_stream);
+            Input = PipeReader.Create(_stream, ReaderOptions);
             Output = PipeWriter.Create(_stream);
         }
 

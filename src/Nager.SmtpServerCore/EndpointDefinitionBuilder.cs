@@ -22,7 +22,9 @@ namespace Nager.SmtpServerCore
             var definition = new EndpointDefinition
             {
                 SessionTimeout = TimeSpan.FromMinutes(2),
-                SupportedSslProtocols = SslProtocols.Tls12,
+                // let the operating system choose the protocol (TLS 1.3 where available), see
+                // https://learn.microsoft.com/en-us/dotnet/framework/network-programming/tls#configuring-security-via-sslprotocols
+                SupportedSslProtocols = SslProtocols.None,
             };
 
             _setters.ForEach(setter => setter(definition));
@@ -139,7 +141,7 @@ namespace Nager.SmtpServerCore
         /// <summary>
         /// Sets the supported SSL protocols.
         /// </summary>
-        /// <param name="value">The supported SSL protocols.</param>
+        /// <param name="value">The supported SSL protocols, <see cref="SslProtocols.None"/> (the default) lets the operating system choose.</param>
         /// <returns>A EndpointDefinitionBuilder to continue building on.</returns>
         public EndpointDefinitionBuilder SupportedSslProtocols(SslProtocols value)
         {

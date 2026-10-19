@@ -400,6 +400,39 @@ namespace Nager.SmtpServerCore.Tests
             return true;
         }
 
+        /// <summary>
+        /// TLS 1.3 on the server side needs Windows Server 2022 / Windows 11 (build 20348) or newer, and
+        /// the SecureTransport backend on macOS does not support TLS 1.3 at all.
+        /// </summary>
+        static bool IsTls13SupportedByTheOperatingSystem
+            => OperatingSystem.IsMacOS() == false
+               && (OperatingSystem.IsWindows() == false || Environment.OSVersion.Version.Build >= 20348);
+
+        [Fact]
+        public async Task NegotiatesTls13ByDefault()
+        {
+            Assert.SkipUnless(IsTls13SupportedByTheOperatingSystem, "the operating system does not support TLS 1.3 on the server side");
+
+            // arrange: an implicit TLS endpoint without an explicit SupportedSslProtocols configuration
+            using var disposable = CreateServer(endpoint => endpoint
+                .IsSecure(true)
+                .Certificate(CreateCertificate()));
+
+            using var tcpClient = new TcpClient("localhost", 9025);
+            using var sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+
+            // act: the client lets the operating system choose the best protocol
+            await sslStream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
+            {
+                TargetHost = "localhost",
+                EnabledSslProtocols = SslProtocols.None,
+            }, TestContext.Current.CancellationToken);
+
+            // assert
+            Assert.True(sslStream.IsAuthenticated);
+            Assert.Equal(SslProtocols.Tls13, sslStream.SslProtocol);
+        }
+
         [Fact]
         public async Task SessionTimeoutIsExceeded_DelayedAuthenticate()
         {
